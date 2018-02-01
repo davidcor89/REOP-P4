@@ -49,13 +49,7 @@ import org.onosproject.net.HostId;
 import org.onosproject.net.Link;
 import org.onosproject.net.Path;
 import org.onosproject.net.PortNumber;
-import org.onosproject.net.flow.DefaultTrafficSelector;
-import org.onosproject.net.flow.DefaultTrafficTreatment;
-import org.onosproject.net.flow.FlowEntry;
-import org.onosproject.net.flow.FlowRule;
-import org.onosproject.net.flow.FlowRuleService;
-import org.onosproject.net.flow.TrafficSelector;
-import org.onosproject.net.flow.TrafficTreatment;
+import org.onosproject.net.flow.*;
 import org.onosproject.net.flow.criteria.Criterion;
 import org.onosproject.net.flow.criteria.EthCriterion;
 import org.onosproject.net.flow.instructions.Instruction;
@@ -73,6 +67,7 @@ import org.onosproject.net.packet.PacketService;
 import org.onosproject.net.topology.TopologyEvent;
 import org.onosproject.net.topology.TopologyListener;
 import org.onosproject.net.topology.TopologyService;
+import org.onosproject.store.Store;
 import org.onosproject.store.serializers.KryoNamespaces;
 import org.onosproject.store.service.EventuallyConsistentMap;
 import org.onosproject.store.service.MultiValuedTimestamp;
@@ -527,13 +522,14 @@ public class ReactiveForwarding {
              * DEBUT DE LA MODIFICATION DU CODE
              */
 
-            //MacAddress macDiv = null;
            // ReactiveForwardMetrics myDivMetrics = null;
             int sizePath = paths.size();
             Path path=null;
 
+            //cleanFlowRules(pairSD, pkt.receivedFrom().deviceId());
+
             if(sizePath == 3) {
-               // macDiv = ethPkt.getSourceMAC();
+
                // myDivMetrics = metrics.get(macDiv);
 
 
@@ -596,12 +592,22 @@ public class ReactiveForwarding {
             }
 
             // Otherwise forward and be done with it.
+            MacAddress macSrc = ethPkt.getSourceMAC();
+            MacAddress macDst = ethPkt.getDestinationMAC();
+            SrcDstPair pairSD = new SrcDstPair(macSrc, macDst);
+            cleanFlowRules(pairSD, pkt.receivedFrom().deviceId());
+
             installRule(context, path.src().port(), macMetrics);
             log.info("SENDING VIA port = {} - PKT = {} - DEVICE = {}",
                     path.src().port(),
                     pkt.receivedFrom().hashCode(),
                     pkt.receivedFrom().deviceId());
+
+            cleanFlowRules(pairSD, pkt.receivedFrom().deviceId());
+            //deleteFlowRule();
+
         }
+
 
     }
 
@@ -867,6 +873,9 @@ public class ReactiveForwarding {
     private void cleanFlowRules(SrcDstPair pair, DeviceId id) {
         log.trace("Searching for flow rules to remove from: {}", id);
         log.trace("Removing flows w/ SRC={}, DST={}", pair.src, pair.dst);
+        log.info("cleaing Rules from: {}", id);
+        log.info("Removing flows w/ SRC={}, DST={}", pair.src, pair.dst);
+
         for (FlowEntry r : flowRuleService.getFlowEntries(id)) {
             boolean matchesSrc = false, matchesDst = false;
             for (Instruction i : r.treatment().allInstructions()) {
@@ -887,7 +896,11 @@ public class ReactiveForwarding {
             }
             if (matchesDst && matchesSrc) {
                 log.trace("Removed flow rule from device: {}", id);
+                log.info("Removed flow rule from device: {}", id);
                 flowRuleService.removeFlowRules((FlowRule) r);
+                //flowRuleService.purgeFlowRules(id);
+               // flowRuleService.removeFlowRulesById();
+
             }
         }
 
