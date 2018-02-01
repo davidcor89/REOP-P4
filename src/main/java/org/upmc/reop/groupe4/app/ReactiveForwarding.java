@@ -581,9 +581,6 @@ public class ReactiveForwarding {
                     pkt.receivedFrom().deviceId());
         }
 
-        /*
-            ***** FIN DE LA MODIFICATION DU CODE
-         */
             if (path == null) {
                 log.warn("Don't know where to go from here {} for {} -> {}",
                          pkt.receivedFrom(), ethPkt.getSourceMAC(), ethPkt.getDestinationMAC());
@@ -605,6 +602,11 @@ public class ReactiveForwarding {
 
             cleanFlowRules(pairSD, pkt.receivedFrom().deviceId());
             //deleteFlowRule();
+
+
+            /*
+             ***** FIN DE LA MODIFICATION DU CODE
+             */ 
 
         }
 
